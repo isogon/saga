@@ -18,6 +18,7 @@ export default class Saga {
     const previousResults = [];
     const previousCompensationResults = [];
     const previouslyRan = [];
+    var compensatingFor = null;
     function compensateNext() {
       if (previouslyRan.length === 0) {
         return bounce(_=>new SagaError(previousCompensationResults.map(result => Object.assign({}, result, {
@@ -26,7 +27,7 @@ export default class Saga {
       }
       const currentlyCompensating = previouslyRan.pop();
       const currentCompensationResult = previousResults.pop();
-      return currentlyCompensating.compensate(currentCompensationResult.data, ...args).then(result => {
+      return currentlyCompensating.compensate(currentCompensationResult.data, compensatingFor, ...args).then(result => {
         previousCompensationResults.unshift(result);
         return bounce(compensateNext);
       });
@@ -38,13 +39,14 @@ export default class Saga {
         })));
       }
       const currentlyRunning = toRun.shift();
-      return currentlyRunning.run(previousResults, ...args).then(result => {
+      return currentlyRunning.run(previousResults.map(previousResult => previousResult.data), ...args).then(result => {
         if (result.status === Statuses.SUCCESS) {
           previouslyRan.push(currentlyRunning);
           previousResults.push(result);
           return bounce(runNext);
         }
 
+        compensatingFor = result.data;
         return bounce(compensateNext);
       }, (e) => {
         console.log("error?");

@@ -2,7 +2,7 @@ import Saga from "../src/Saga";
 import Outcomes from "../src/Outcomes";
 import Statuses from "../src/Statuses";
 
-describe.only("Saga", function() {
+describe("Saga", function() {
   //TODO
   var firstTrxRet;
   var secondTrxRet;
@@ -79,6 +79,43 @@ describe.only("Saga", function() {
           expect(firstTrx.run).to.have.been.calledOnce;
           expect(secondTrx.run).to.have.been.calledOnce;
           expect(firstTrx.compensate).to.have.been.calledOnce;
+        })
+      ]);
+    });
+
+    it("calls `Transaction.run`s with args and previous results", function() {
+      const firstArg = Math.random();
+      const secondArg = Math.random();
+
+      const sagaRun = saga.run(firstArg, secondArg);
+      return Promise.all([
+        expect(sagaRun).to.eventually.be.fulfilled,
+        sagaRun.then(function() {
+          expect(firstTrx.run).to.have.been.calledOnce;
+          expect(firstTrx.run).to.have.been.calledWithExactly([], firstArg, secondArg);
+          expect(secondTrx.run).to.have.been.calledOnce;
+          expect(secondTrx.run).to.have.been.calledWithExactly([firstTrxRet.data], firstArg, secondArg);
+        })
+      ]);
+    });
+
+    it("calls `Transaction.compensate`s with args, failure, and correlated .run result", function() {
+      const firstArg = Math.random();
+      const secondArg = Math.random();
+      secondTrx.run = sinon.stub().returns(Promise.resolve(Object.assign({}, secondTrxRet, {
+        status: Statuses.FAILURE
+      })));
+
+      const sagaRun = saga.run(firstArg, secondArg);
+      return Promise.all([
+        expect(sagaRun).to.eventually.be.rejected,
+        sagaRun.then(null, function() {
+          expect(firstTrx.run).to.have.been.calledOnce;
+          expect(firstTrx.run).to.have.been.calledWithExactly([], firstArg, secondArg);
+          expect(secondTrx.run).to.have.been.calledOnce;
+          expect(secondTrx.run).to.have.been.calledWithExactly([firstTrxRet.data], firstArg, secondArg);
+          expect(firstTrx.compensate).to.have.been.calledOnce;
+          expect(firstTrx.compensate).to.have.been.calledWithExactly(firstTrxRet.data, secondTrxRet.data, firstArg, secondArg);
         })
       ]);
     });
