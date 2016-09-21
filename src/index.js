@@ -5,7 +5,7 @@ import Statuses from "./Statuses";
 
 export { Saga, Transaction, Outcomes, Statuses };
 
-const chainCreate = new Saga(
+/*const chainCreate = new Saga(
   new Transaction(function(previousResults, fooArg, barArg) {
     return Foo.create(fooArg);
   }, function(ownResult, upstreamError) {
@@ -38,4 +38,4 @@ chainCreate.run({
 
 }, function() {
 
-});
+});*/

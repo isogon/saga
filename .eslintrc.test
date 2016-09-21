@@ -1,0 +1,26 @@
+{
+  "extends": "./.eslintrc.src",
+  "env": {
+    "mocha": true
+  },
+  "globals": {
+    "expect": true,
+    "sinon": true
+  },
+  "rules": {
+    "max-nested-callbacks": [2, 5],
+    "max-lines": [1, 200],
+    "no-magic-numbers": 0,
+    "no-unused-expressions": 0,
+    "max-len": [1, {
+      "code": 80,
+      "tabWidth": 2,
+      "comments": 120,
+      "ignoreComments": false,
+      "ignoreTrailingComments": false,
+      "ignoreUrls": true,
+      "ignoreStrings": true,
+      "ignoreTemplateLiterals": true
+    }],
+  }
+}

@@ -7,7 +7,7 @@ describe("bounce", function() {
   beforeEach(() => {
     expectedResult = Math.random();
     bounced = sinon.stub().returns(expectedResult);
-  })
+  });
 
   it("defers execution of a function", function(done) {
     bounce(done);
@@ -25,6 +25,6 @@ describe("bounce", function() {
     return bounce(bounced).then(() => {
       expect(bounced).to.have.been.calledOnce;
       expect(bounced).to.have.been.calledWithExactly();
-    })
+    });
   });
 });

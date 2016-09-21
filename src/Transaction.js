@@ -1,5 +1,3 @@
-import Promise from "bluebird";
-
 import bounce from "./bounce";
 
 import Statuses from "./Statuses";
@@ -11,24 +9,22 @@ export default class Transaction {
   }
 
   run(...args) {
-    return this._run(this.onRun, args);
+    return Transaction._run(this.onRun, args);
   }
 
   compensate(...args) {
-    return this._run(this.onCompensate, args);
+    return Transaction._run(this.onCompensate, args);
   }
 
-  _run(target, args) {
-    return Promise.resolve(target(...args)).then(result => {
-      return {
-        status: Statuses.SUCCESS,
-        data: result
-      }
-    }, error => {
-      return {
-        status: Statuses.ERROR,
-        data: error
-      };
-    });
+  static _run(target, args) {
+    return bounce(function() {
+      return target(...args);
+    }).then(result => ({
+      status: Statuses.SUCCESS,
+      data: result
+    }), error => ({
+      status: Statuses.ERROR,
+      data: error
+    }));
   }
-};
+}

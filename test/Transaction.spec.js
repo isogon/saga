@@ -31,8 +31,8 @@ describe("Transaction", function() {
     it("calls the run handler with all passed arguments", function() {
       const arg1 = Math.random();
       const arg2 = Math.random();
-
       const trxRun = trx.run(arg1, arg2);
+
       return trxRun.then(() => {
         expect(stubRun).to.have.been.calledOnce;
         expect(stubRun).to.have.been.calledWithExactly(arg1, arg2);
@@ -41,6 +41,7 @@ describe("Transaction", function() {
 
     it("resolves with an object with a status and data", function() {
       const trxRun = trx.run();
+
       return Promise.all([
         expect(trxRun).to.eventually.be.an("object"),
         expect(trxRun).to.eventually.have.property("status"),
@@ -51,8 +52,11 @@ describe("Transaction", function() {
 
     it("handles success by returning data and an success status", function() {
       const expectedResult = Math.random();
+
       stubRun.returns(Promise.resolve(expectedResult));
+
       const trxRun = trx.run();
+
       return Promise.all([
         expect(trxRun).to.eventually.have.property("status", Statuses.SUCCESS),
         expect(trxRun).to.eventually.have.property("data", expectedResult),
@@ -62,8 +66,11 @@ describe("Transaction", function() {
 
     it("handles rejections by returning data and an error status", function() {
       const expectedResult = Math.random();
+
       stubRun.returns(Promise.reject(expectedResult));
+
       const trxRun = trx.run();
+
       return Promise.all([
         expect(trxRun).to.eventually.have.property("status", Statuses.ERROR),
         expect(trxRun).to.eventually.have.property("data", expectedResult),
@@ -84,6 +91,7 @@ describe("Transaction", function() {
       const arg2 = Math.random();
 
       const trxRun = trx.compensate(arg1, arg2);
+
       return trxRun.then(() => {
         expect(stubCompensate).to.have.been.calledOnce;
         expect(stubCompensate).to.have.been.calledWithExactly(arg1, arg2);
@@ -92,6 +100,7 @@ describe("Transaction", function() {
 
     it("resolves with an object with a status and data", function() {
       const trxRun = trx.compensate();
+
       return Promise.all([
         expect(trxRun).to.eventually.be.an("object"),
         expect(trxRun).to.eventually.have.property("status"),
@@ -102,8 +111,11 @@ describe("Transaction", function() {
 
     it("handles success by returning data and an success status", function() {
       const expectedResult = Math.random();
+
       stubCompensate.returns(Promise.resolve(expectedResult));
+
       const trxRun = trx.compensate();
+
       return Promise.all([
         expect(trxRun).to.eventually.have.property("status", Statuses.SUCCESS),
         expect(trxRun).to.eventually.have.property("data", expectedResult),
@@ -113,8 +125,11 @@ describe("Transaction", function() {
 
     it("handles rejections by returning data and an error status", function() {
       const expectedResult = Math.random();
+
       stubCompensate.returns(Promise.reject(expectedResult));
+
       const trxRun = trx.compensate();
+
       return Promise.all([
         expect(trxRun).to.eventually.have.property("status", Statuses.ERROR),
         expect(trxRun).to.eventually.have.property("data", expectedResult),
@@ -124,7 +139,6 @@ describe("Transaction", function() {
   });
 
   describe(".all", function() {
-    xit("runs multiple Transactions in parallel", function() {
-    })
+    xit("runs multiple Transactions in parallel");
   });
 });
