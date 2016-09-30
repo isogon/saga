@@ -1,5 +1,5 @@
 {
-  "name": "sagajs",
+  "name": "saga-js",
   "version": "0.0.1",
   "description": "A simple generic library to help in writing sagas",
   "main": "build/index.js",
