@@ -1,9 +1,8 @@
-import Saga from "../src/Saga";
-import Outcomes from "../src/Outcomes";
-import Statuses from "../src/Statuses";
+import Saga from "../../src/Saga";
+import Outcomes from "../../src/Outcomes";
+import Statuses from "../../src/Statuses";
 
 describe("Saga", function() {
-  //TODO
   var firstTrxRet;
   var secondTrxRet;
   var firstTrx;
@@ -53,16 +52,36 @@ describe("Saga", function() {
     });
 
     it("the promise resolves to outcomes", function() {
-      return saga.run().then(function(result) {
-        expect(result).to.be.an.instanceof(Array);
-        expect(result).to.have.length(2);
-        expect(result[0]).to.have.property("status", Statuses.SUCCESS);
-        expect(result[0]).to.have.property("outcome", Outcomes.COMPLETED);
-        expect(result[0]).to.have.property("data", firstTrxRet.data);
-        expect(result[1]).to.have.property("status", Statuses.SUCCESS);
-        expect(result[1]).to.have.property("outcome", Outcomes.COMPLETED);
-        expect(result[1]).to.have.property("data", secondTrxRet.data);
-      });
+      const sagaRun = saga.run();
+
+      return Promise.all([
+        expect(sagaRun).to.eventually.be.an("array")
+          .that.has.length(2),
+        expect(sagaRun).to.eventually.have.deep.property("[0]")
+          .that.is.an("object")
+          .that.has.property("status")
+          .that.equals(Statuses.SUCCESS),
+        expect(sagaRun).to.eventually.have.deep.property("[0]")
+          .that.is.an("object")
+          .that.has.property("outcome")
+          .that.equals(Outcomes.COMPLETED),
+        expect(sagaRun).to.eventually.have.deep.property("[0]")
+          .that.is.an("object")
+          .that.has.property("data")
+          .that.equals(firstTrxRet.data),
+        expect(sagaRun).to.eventually.have.deep.property("[1]")
+          .that.is.an("object")
+          .that.has.property("status")
+          .that.equals(Statuses.SUCCESS),
+        expect(sagaRun).to.eventually.have.deep.property("[1]")
+          .that.is.an("object")
+          .that.has.property("outcome")
+          .that.equals(Outcomes.COMPLETED),
+        expect(sagaRun).to.eventually.have.deep.property("[1]")
+          .that.is.an("object")
+          .that.has.property("data")
+          .that.equals(secondTrxRet.data)
+      ]);
     });
 
     it("calls all transaction runs", function() {
@@ -128,7 +147,12 @@ describe("Saga", function() {
             .calledWithExactly([firstTrxRet.data], firstArg, secondArg);
           expect(firstTrx.compensate).to.have.been.calledOnce;
           expect(firstTrx.compensate).to.have.been
-            .calledWithExactly(firstTrxRet.data, secondTrxRet.data, firstArg, secondArg);
+            .calledWithExactly(
+              firstTrxRet.data,
+              secondTrxRet.data,
+              firstArg,
+              secondArg
+            );
         })
       ]);
     });

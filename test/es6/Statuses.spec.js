@@ -1,4 +1,4 @@
-import Statuses from "../src/Statuses";
+import Statuses from "../../src/Statuses";
 
 describe("Statuses", function() {
   it("is an object keyed by strings, with the key as the value", function() {

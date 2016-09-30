@@ -1,4 +1,4 @@
-import bounce from "../src/bounce";
+import bounce from "../../src/bounce";
 
 describe("bounce", function() {
   var bounced;

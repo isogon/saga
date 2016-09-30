@@ -1,4 +1,4 @@
-import Outcomes from "../src/Outcomes";
+import Outcomes from "../../src/Outcomes";
 
 describe("Outcomes", function() {
   it("is an object keyed by strings, with the key as the value", function() {

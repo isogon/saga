@@ -1,30 +1,54 @@
-import bounce from "./bounce";
+// @flow
 
+import bounce from "./bounce";
 import Statuses from "./Statuses";
+import TransactionResult from "./TransactionResult";
+
+//const EMPTY_ARRAY_LENGTH = 0;
+
+type Transactable = (...args: any) => Promise<any>;
 
 export default class Transaction {
-  constructor(onRun, onCompensate) {
+  onRun: Transactable
+  onCompensate: Transactable
+  constructor(onRun: Transactable, onCompensate: Transactable) {
     this.onRun = onRun;
     this.onCompensate = onCompensate;
   }
 
-  run(...args) {
-    return Transaction._run(this.onRun, args);
+  run(...args: any): Promise<TransactionResult> {
+    const context = {};
+
+    return bounce(() => Reflect.apply(this.onRun, context, args))
+      .then(data => ({
+        data,
+        status: Statuses.SUCCESS
+      }), data => ({
+        data,
+        status: Statuses.ERROR
+      }))
+      .then(({ data, status }) => new TransactionResult(
+        this,
+        args,
+        context,
+        status,
+        data
+      ));
   }
 
-  compensate(...args) {
-    return Transaction._run(this.onCompensate, args);
+  static all(...transactions: Array<Transaction>): Transaction {
+    return new Transaction(function(...args: any) {
+      return Promise.all(
+        transactions.map(transaction => transaction.run(args))
+      );
+    }, function(resultSet: Array<TransactionResult>, upstreamError: mixed) {
+      return Promise.all(
+        resultSet.map(result => result.compensate(upstreamError))
+      );
+    });
   }
 
-  static _run(target, args) {
-    return bounce(function() {
-      return target(...args);
-    }).then(result => ({
-      status: Statuses.SUCCESS,
-      data: result
-    }), error => ({
-      status: Statuses.ERROR,
-      data: error
-    }));
+  static fromSaga(): void {
+    //TODO
   }
 }

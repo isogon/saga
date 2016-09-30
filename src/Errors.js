@@ -1,5 +1,7 @@
-class ExtendableError extends Error {
-  constructor(message) {
+// @flow
+
+export default class ExtendableError extends Error {
+  constructor(message: string) {
     super(message);
     this.name = this.constructor.name;
     this.message = message;
@@ -11,9 +13,13 @@ class ExtendableError extends Error {
   }
 }
 
-export default class SagaError extends ExtendableError {
-  constructor(results) {
+export class SagaError extends ExtendableError {
+  results: any
+  constructor(results: any) {
     super("The saga encountered an error.");
     this.results = results;
   }
+}
+
+export class TransactionError extends ExtendableError {
 }

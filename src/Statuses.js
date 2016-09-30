@@ -1,6 +1,10 @@
-const Statuses = [
-  "SUCCESS",
-  "ERROR"
-].reduce((acc, val) => Object.assign(acc, { [val]: val }), {});
+// @flow
+
+const Statuses = {
+  SUCCESS: "SUCCESS",
+  ERROR: "ERROR"
+};
+
+export type Status = $Keys<typeof Statuses>; //eslint-disable-line no-undef
 
 export default Statuses;

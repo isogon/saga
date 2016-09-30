@@ -1,6 +1,10 @@
-const Statuses = [
-  "COMPLETED",
-  "COMPENSATED"
-].reduce((acc, val) => Object.assign(acc, { [val]: val }), {});
+// @flow
 
-export default Statuses;
+const Outcomes = {
+  COMPLETED: "COMPLETED",
+  COMPENSATED: "COMPENSATED"
+};
+
+export type Outcome = $Keys<typeof Outcomes>; //eslint-disable-line no-undef
+
+export default Outcomes;

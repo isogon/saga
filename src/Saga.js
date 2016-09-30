@@ -1,69 +1,53 @@
+// @flow
+
+import Promise from "bluebird";
+
 import bounce from "./bounce";
 
-import SagaError from "./SagaError";
+import { SagaError } from "./Errors";
 import Statuses from "./Statuses";
 import Outcomes from "./Outcomes";
+import Transaction from "./Transaction";
+
+import TransactionResult from "./TransactionResult";
 
 const EMPTY_ARRAY_LENGTH = 0;
 const STARTING_ARRAY_INDEX = 0;
 
 export default class Saga {
-  constructor(...transactions) {
+  transactions: Array<Transaction>
+  constructor(...transactions: Array<Transaction>) {
     this.transactions = transactions;
   }
 
   //Lots of local scope in here, because we can run the same saga multiple times
   //possibly with different arguments
-  run(...args) {
+  run(...args: Array<mixed>): Promise<TransactionResult> {
     const toRun = this.transactions.slice(STARTING_ARRAY_INDEX);
     const previousResults = [];
-    const previousCompensationResults = [];
-    const previouslyRan = [];
-    var compensatingFor = null;
 
-    function compensateNext() {
-      if (previouslyRan.length === EMPTY_ARRAY_LENGTH) {
-        return bounce(function() {
-          return new SagaError(previousCompensationResults.map(result =>
-            Object.assign({}, result, { outcome: Outcomes.COMPENSATED })
-          ));
-        }, true);
-      }
-      const currentlyCompensating = previouslyRan.pop();
-      const currentCompensationResult = previousResults.pop();
+    Promise.mapSeries(toRun, transaction: Transaction => {
+      return transaction.run().then(result: TransactionResult => {
+        if (result.status === Statuses.ERROR) {
+          return Promise.reject(result)
+        }
 
-      return currentlyCompensating.compensate(currentCompensationResult.data,
-        compensatingFor, ...args).then(result => {
-          previousCompensationResults.unshift(result);
+        previousResults.push(result);
 
-          return bounce(compensateNext);
-        });
-    }
-    function runNext() {
-      if (toRun.length === EMPTY_ARRAY_LENGTH) {
-        return bounce(function() {
-          return previousResults.map(result =>
-            Object.assign({}, result, { outcome: Outcomes.COMPLETED })
-          );
-        });
-      }
-      const currentlyRunning = toRun.shift();
+        return result;
+      })
+    }).then((data) => {
+      return new SagaResult(
+        this,
+        args,
+        Statuses.SUCCESS,
+        data
+      );
+    }, function(data) {
 
-      return currentlyRunning.run(previousResults.map(previousResult =>
-          previousResult.data
-        ), ...args).then(result => {
-          if (result.status === Statuses.SUCCESS) {
-            previouslyRan.push(currentlyRunning);
-            previousResults.push(result);
+    })
 
-            return bounce(runNext);
-          }
 
-          compensatingFor = result.data;
-
-          return bounce(compensateNext);
-        });
-    }
 
     return bounce(runNext);
   }

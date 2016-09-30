@@ -1,5 +1,5 @@
-import Transaction from "../src/Transaction";
-import Statuses from "../src/Statuses";
+import Transaction from "../../src/Transaction";
+import Statuses from "../../src/Statuses";
 
 describe("Transaction", function() {
   var trx;
@@ -139,6 +139,119 @@ describe("Transaction", function() {
   });
 
   describe(".all", function() {
-    xit("runs multiple Transactions in parallel");
+    var trx1;
+    var trx2;
+    var trx1run;
+    var trx1compensate;
+    var trx2run;
+    var trx2compensate;
+    var trxAll;
+    var trx1data;
+    var trx2data;
+
+    beforeEach(function() {
+      trx1data = Math.random();
+      trx1run = sinon.stub().returns(Promise.resolve(trx1data));
+      trx1compensate = sinon.stub().returns(Promise.resolve(trx1data));
+      trx2data = Math.random();
+      trx2run = sinon.stub().returns(Promise.resolve(trx2data));
+      trx2compensate = sinon.stub().returns(Promise.resolve(trx1data));
+
+      trx1 = new Transaction(trx1run, trx1compensate);
+      trx2 = new Transaction(trx2run, trx2compensate);
+
+      trxAll = Transaction.all(trx1, trx2);
+    });
+
+    it("runs multiple Transactions in parallel", function() {
+      const trxRun = trxAll.run();
+
+      return Promise.all([
+        expect(trxRun).to.eventually.be.fulfilled,
+        trxRun.then(() => {
+          expect(trx1run).to.have.been.calledOnce;
+          expect(trx2run).to.have.been.calledOnce;
+        })
+      ]);
+    });
+
+    it("calls all transactions with the same arguments", function() {
+      const trxAllArgs = [
+        Math.random(),
+        Math.random(),
+        Math.random()
+      ];
+
+      const trxRun = trxAll.run(...trxAllArgs);
+
+      return Promise.all([
+        expect(trxRun).to.eventually.be.fulfilled,
+        trxRun.then(() => {
+          expect(trx1run).to.have.been.calledWithExactly(...trxAllArgs);
+          expect(trx2run).to.have.been.calledWithExactly(...trxAllArgs);
+        })
+      ]);
+    });
+
+    it("returns the same type of meta object as a Transaction", function() {
+      const expectedResult = [trx1data, trx2data];
+
+      const trxRun = trxAll.run();
+
+      return Promise.all([
+        expect(trxRun).to.eventually.have.property("status")
+          .that.equals(Statuses.SUCCESS),
+        expect(trxRun).to.eventually.have.property("data")
+          .that.is.an("array")
+          .that.deep.equals(expectedResult)
+      ]);
+    });
+
+    it("calls compensators of successful transactions if any fail", function() {
+      const trxAllArgs = [
+        Math.random(),
+        Math.random(),
+        Math.random()
+      ];
+      var trxRun = trxAll.run(...trxAllArgs);
+
+      trx1run.returns(Promise.reject(trx1data));
+
+      return Promise.all([
+        expect(trxRun).to.eventually.be.fulfilled,
+        trxRun.then(() => {
+          expect(trx1run).to.have.been.calledOnce;
+          expect(trx2run).to.have.been.calledOnce;
+          expect(trx1compensate).not.to.have.been.called;
+          expect(trx2compensate).to.have.been.calledOnce;
+        })
+      ]);
+    });
+
+    it("compensates all of its actions if called to do so", function() {
+      const fakeErr = Math.random();
+      const trxAllArgs = [
+        Math.random(),
+        Math.random(),
+        Math.random()
+      ];
+
+      const trxRun = trxAll.run().then(function() {
+        trxAll.compensate(fakeErr, ...trxAllArgs);
+      });
+
+      return Promise.all([
+        expect(trxRun).to.eventually.be.fulfilled,
+        trxRun.then(() => {
+          expect(trx1compensate).to.have.been.calledOnce;
+          expect(trx1compensate).to.have.been
+            .calledWithExactly(trx1data, fakeErr, ...trxAllArgs);
+          expect(trx2compensate).to.have.been
+            .calledWithExactly(trx2data, fakeErr, ...trxAllArgs);
+          expect(trx1run).to.have.been.calledOnce;
+          expect(trx2run).to.have.been.calledOnce;
+        })
+      ]);
+    });
   });
 });
