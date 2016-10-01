@@ -1,8 +1,8 @@
 Saga.js
 =======
 
-What is a saga
-==============
+What is a saga?
+===============
 A saga is a sequence of actions whose outcome can be thought of as either wholly
 succeeding, or wholly failing.
 
@@ -21,11 +21,31 @@ and even in the browser. (See the dist folder if you want a browser bundle, the
 build folder if you want to see what code gets run by node/commonjs, and the src
 folder if you want the es6 source files.)
 
-```
-import { Saga, Transaction } from "sagajs";
+```js
+const Promise = require("bluebird");
 
+const { Saga, Transaction } = require("../build");
+const { userAdd, userDel, addToGroup, deleteFromGroup } = require("./some-library");
 
+const createUser = new Transaction(
 
+  //This runs to do some simple part of an action
+  (previousResults, username) => userAdd(username)
+    .then(uid => ({uid, username})),
+
+  //This runs if it needs to be undone
+  ({uid}) => userDel(uid));
+
+const addUserToGroup = new Transaction(
+  ([{uid}], username, groupName) => addToGroup(uid, groupName)
+    .then((membershipTicket) => ({uid, groupName, membershipTicket})),
+  ({membershipTicket}) => deleteFromGroup(membershipTicket));
+
+const newUserSaga = new Saga(createUser, addUserToGroup);
+
+export default function(username, memberGroup) {
+  return newUserSaga.run(username, memberGroup);
+}
 ```
 
 Further reading
@@ -52,3 +72,10 @@ You keep saying transaction, what do you mean by that?
 In this library a transaction is the unit of an action and a compensating action
 to undo whatever the action would do. You compose multiple transactions into a
 saga.
+
+Things that need doing
+======================
+1. More examples.
+1. More testing.
+1. More test configurations (different node environments, different browsers, etc)
+1. CI, probablt of the travis variety
